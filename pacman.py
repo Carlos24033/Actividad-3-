@@ -72,7 +72,6 @@ def offset(point):
     index = int(x + y * 20)
     return index
 
-
 def valid(point):
     """Return True if point is valid in tiles."""
     index = offset(point)
@@ -87,6 +86,37 @@ def valid(point):
 
     return point.x % 20 == 0 or point.y % 20 == 0
 
+
+def smart_ghost(point, course):
+    """Make ghosts chase Pac-Man."""
+
+    options = [
+        vector(5, 0),
+        vector(-5, 0),
+        vector(0, 5),
+        vector(0, -5),
+    ]
+
+    possible = []
+
+    for option in options:
+        if valid(point + option):
+            possible.append(option)
+
+    if not possible:
+        return course
+
+    best = possible[0]
+    best_distance = abs(pacman - (point + best))
+
+    for option in possible:
+        distance = abs(pacman - (point + option))
+
+        if distance < best_distance:
+            best = option
+            best_distance = distance
+
+    return best
 
 def world():
     """Draw world using path."""
@@ -130,31 +160,28 @@ def move():
     goto(pacman.x + 10, pacman.y + 10)
     dot(20, 'yellow')
 
+    # Move the ghosts
     for point, course in ghosts:
+        plan = smart_ghost(point, course)
+
+        course.x = plan.x
+        course.y = plan.y
+
         if valid(point + course):
             point.move(course)
-        else:
-            options = [
-                vector(5, 0),
-                vector(-5, 0),
-                vector(0, 5),
-                vector(0, -5),
-            ]
-            plan = choice(options)
-            course.x = plan.x
-            course.y = plan.y
 
         up()
         goto(point.x + 10, point.y + 10)
         dot(20, 'red')
 
-    update()
-
+    # Check if Pac-Man touches a ghost
     for point, course in ghosts:
         if abs(pacman - point) < 20:
             return
 
+    update()
     ontimer(move, 100)
+   
 
 
 def change(x, y):
